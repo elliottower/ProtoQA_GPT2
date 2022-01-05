@@ -42,7 +42,9 @@ ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) for conf in (
 
 MODEL_CLASSES = {
     'gpt2': (GPT2LMHeadModel, GPT2Tokenizer),
+    'allenai/macaw-large': (AutoModelForSeq2SeqLM, AutoTokenizer),
     'allenai/macaw-3b': (AutoModelForSeq2SeqLM, AutoTokenizer),
+    'allenai/macaw-11b': (AutoModelForSeq2SeqLM, AutoTokenizer),
 }
 
 
