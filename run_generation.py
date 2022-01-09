@@ -18,6 +18,8 @@ from transformers import GPT2Config, OpenAIGPTConfig, XLNetConfig, TransfoXLConf
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
+from macaw.utils import load_model, run_macaw
+
 import json
 import collections
 import nltk
@@ -295,42 +297,49 @@ def main():
     result = []
     i=0
     num = len(questions)
+    
+    model_dict = load_model("allenai/macaw-large")
+    
     for single_question_idx in range(len(questions)):
         print(i,'th example')
         raw_text = questions[single_question_idx]
         i+=1
         context_tokens = tokenizer.encode(raw_text, add_special_tokens=False)
-        out = sample_sequence(
-            model=model,
-            context=context_tokens,
-            num_samples=args.num_samples,
-            length=args.length,
-            temperature=args.temperature,
-            top_k=args.top_k,
-            top_p=args.top_p,
-            repetition_penalty=args.repetition_penalty,
-            is_xlnet=False,
-            is_xlm_mlm=False,
-            xlm_mask_token=None,
-            xlm_lang=None,
-            device=args.device,
-        )
-        out = out[:, len(context_tokens):].tolist()
-        for o in out:
-            text = tokenizer.decode(o, clean_up_tokenization_spaces=True)
-            text = text[: text.find(args.stop_token)+1 if args.stop_token else None]
-            text = text.strip()
-            if text.endswith('.'):
-                text = text[:-1]
-            # print(text)
-            nostop_text_list = [tok for tok in text.split(' ') if tok not in en_stopwords]
-            nostop_text = " ".join(nostop_text_list)
-            # print(nostop_text)
-            if qidx[single_question_idx] not in prediced_dev:
-                prediced_dev[qidx[single_question_idx]] = [nostop_text]
-            else:
-                prediced_dev[qidx[single_question_idx]].append(nostop_text)
-            result.append((raw_text, nostop_text))
+        
+        out = run_macaw({"Q:":raw_text, "A:":""}, model_dict, {"do_sample": True, "temperature": 2.0})
+        results.append((raw_text, out))
+        
+#         out = sample_sequence(
+#             model=model,
+#             context=context_tokens,
+#             num_samples=args.num_samples,
+#             length=args.length,
+#             temperature=args.temperature,
+#             top_k=args.top_k,
+#             top_p=args.top_p,
+#             repetition_penalty=args.repetition_penalty,
+#             is_xlnet=False,
+#             is_xlm_mlm=False,
+#             xlm_mask_token=None,
+#             xlm_lang=None,
+#             device=args.device,
+#         )
+#         out = out[:, len(context_tokens):].tolist()
+#         for o in out:
+#             text = tokenizer.decode(o, clean_up_tokenization_spaces=True)
+#             text = text[: text.find(args.stop_token)+1 if args.stop_token else None]
+#             text = text.strip()
+#             if text.endswith('.'):
+#                 text = text[:-1]
+#             # print(text)
+#             nostop_text_list = [tok for tok in text.split(' ') if tok not in en_stopwords]
+#             nostop_text = " ".join(nostop_text_list)
+#             # print(nostop_text)
+#             if qidx[single_question_idx] not in prediced_dev:
+#                 prediced_dev[qidx[single_question_idx]] = [nostop_text]
+#             else:
+#                 prediced_dev[qidx[single_question_idx]].append(nostop_text)
+#             result.append((raw_text, nostop_text))
 
 
     ranked_predicted_dev = collections.defaultdict(list)
